@@ -43,6 +43,14 @@ then
 	dbUserPassword="-p${newDbPassword}"
 fi
 
+dbHost="localhost"
+echo "Enter MySQL hostname:"
+read newDbHost
+if [ -n "$newDbHost" ]
+then
+	dbHost=$newDbHost
+fi
+
 includeTransitiveClosure=false
 echo "Calculate and store inferred transitive closure? [Y/N]:"
 read tcResponse
@@ -157,7 +165,7 @@ addLoadScript der2_cRefset_AssociationTYPE_MOD_DATE.txt associationrefset
 addLoadScript der2_iissscRefset_ComplexMapTYPE_MOD_DATE.txt complexmaprefset
 addLoadScript der2_iisssccRefset_ExtendedMapTYPE_MOD_DATE.txt extendedmaprefset
 
-mysql -u ${dbUsername} ${dbUserPassword}  --local-infile << EOF
+mysql -h $dbHost -u ${dbUsername} ${dbUserPassword}  --local-infile << EOF
         select 'Ensuring schema ${dbName} exists' as '  ';
         create database IF NOT EXISTS ${dbName};
         use ${dbName};
@@ -174,7 +182,7 @@ then
                 infRelFile=${localExtract}/xsct2_Relationship_Snapshot_${moduleStr}_${releaseDate}.txt
         fi
         perl ./transitiveClosureRf2Snap_dbCompatible.pl ${infRelFile} ${tempFile}
-	mysql -u ${dbUsername} ${dbUserPassword} ${dbName} << EOF
+	mysql -h $dbHost -u ${dbUsername} ${dbUserPassword} ${dbName} << EOF
 DROP TABLE IF EXISTS transclos;
 CREATE TABLE transclos (
   sourceid varchar(18) DEFAULT NULL,
@@ -195,7 +203,7 @@ then
 		statedRelFile=${localExtract}/xsct2_StatedRelationship_Snapshot_${moduleStr}_${releaseDate}.txt
 	fi
 	perl ./transitiveClosureRf2Snap_dbCompatible.pl ${statedRelFile} ${tempFile}
-	mysql -u ${dbUsername} ${dbUserPassword} ${dbName} << EOF
+	mysql -h $dbHost -u ${dbUsername} ${dbUserPassword} ${dbName} << EOF
 DROP TABLE IF EXISTS stated_transclos;
 CREATE TABLE stated_transclos (
   sourceid varchar(18) DEFAULT NULL,
@@ -207,7 +215,7 @@ EOF
 addLoadScript ${tempFile} stated_transclos
 fi
 
-mysql -u ${dbUsername} ${dbUserPassword} ${dbName}  --local-infile << EOF
+mysql -h $dbHost -u ${dbUsername} ${dbUserPassword} ${dbName}  --local-infile << EOF
 	select 'Loading RF2 Data using ${generatedLoadScript}' as '  ';
 	source ${generatedLoadScript};
 EOF
